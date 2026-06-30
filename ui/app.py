@@ -191,29 +191,37 @@ class AppRTLS(ctk.CTk):
 
             # Tags
             for nombre, info in TAGS.items():
-                tag  = estado_tags[nombre]
-                x, y = tag["x"], tag["y"]
+                    tag  = estado_tags[nombre]
+                    x, y = tag["x"], tag["y"]
 
-                if not SISTEMA["pausado"]:
-                    tag["historial_x"].append(x)
-                    tag["historial_y"].append(y)
-                    if len(tag["historial_x"]) > 200:
-                        tag["historial_x"].pop(0)
-                        tag["historial_y"].pop(0)
+                    # Interpolación suave
+                    elem = self.elementos[nombre]
+                    x_actual = elem.get("x_vis", x)
+                    y_actual = elem.get("y_vis", y)
+                    x_vis = x_actual + (x - x_actual) * 0.3
+                    y_vis = y_actual + (y - y_actual) * 0.3
+                    elem["x_vis"] = x_vis
+                    elem["y_vis"] = y_vis
 
-                elem = self.elementos[nombre]
-                elem["punto"].set_data([x], [y])
-                elem["etiqueta"].set_position((x, y - 0.15))
+                    if not SISTEMA["pausado"]:
+                        tag["historial_x"].append(x_vis)
+                        tag["historial_y"].append(y_vis)
+                        if len(tag["historial_x"]) > 200:
+                            tag["historial_x"].pop(0)
+                            tag["historial_y"].pop(0)
 
-                if not tag["conectado"]:
-                    elem["punto"].set_color('#555555')
-                elif tag["quieto"]:
-                    elem["punto"].set_color('#666688')
-                else:
-                    elem["punto"].set_color(info["color"])
+                    elem["punto"].set_data([x_vis], [y_vis])
+                    elem["etiqueta"].set_position((x_vis, y_vis - 0.15))
 
-                elem["rastro"].set_data(
-                    tag["historial_x"], tag["historial_y"])
+                    if not tag["conectado"]:
+                        elem["punto"].set_color('#555555')
+                    elif tag["quieto"]:
+                        elem["punto"].set_color('#666688')
+                    else:
+                        elem["punto"].set_color(info["color"])
+
+                    elem["rastro"].set_data(
+                        tag["historial_x"], tag["historial_y"])
 
             # Panel info
             if self.panel_vis:
@@ -227,5 +235,5 @@ class AppRTLS(ctk.CTk):
 
         self.anim = FuncAnimation(
             self.fig, update,
-            interval=100, cache_frame_data=False)
-        self.after(100, self.canvas_mpl.draw)
+            interval=50, cache_frame_data=False)
+        self.after(50, self.canvas_mpl.draw)

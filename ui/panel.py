@@ -4,8 +4,8 @@ import tkinter as tk
 from config import TAGS
 from estado import estado_tags, tag_seleccionado
 
-def abrir_log(root, nombre_tag):
-    win = ctk.CTkToplevel(root)
+def abrir_log(parent, nombre_tag):
+    win = ctk.CTkToplevel(parent)
     win.title(f"Historial — {nombre_tag}")
     win.geometry("520x520")
     win.configure(fg_color="#1a1a2e")
@@ -84,21 +84,24 @@ def abrir_log(root, nombre_tag):
 
 
 class PanelInfo(ctk.CTkFrame):
-    """Panel lateral con info del tag seleccionado"""
-
     def __init__(self, parent, on_cerrar, **kwargs):
         super().__init__(parent, fg_color="#16213e",
                          corner_radius=10, **kwargs)
-        self.on_cerrar   = on_cerrar
+        self.on_cerrar  = on_cerrar
         self.info_labels = {}
-        self.mini_log    = None
-        self.nombre_tag  = None
-        self._root       = parent
+        self.mini_log   = None
+        self.nombre_tag = None
+        self.app_parent = parent  # ← nombre cambiado
 
     def mostrar(self, nombre):
         self.nombre_tag = nombre
-        for w in self.winfo_children():
-            w.destroy()
+
+        # Destruir widgets hijos manualmente
+        for w in list(self.children.values()):
+            try:
+                w.destroy()
+            except Exception:
+                pass
 
         info  = TAGS[nombre]
         color = info["ctk_color"]
@@ -111,8 +114,10 @@ class PanelInfo(ctk.CTkFrame):
                      font=ctk.CTkFont(size=14, weight="bold"),
                      text_color=color).pack(side='left', padx=10, pady=8)
 
-        ctk.CTkButton(h, text="✕", width=28, height=28,
-                      fg_color="#333355", hover_color="#555577",
+        ctk.CTkButton(h, text="✕",
+                      width=28, height=28,
+                      fg_color="#333355",
+                      hover_color="#555577",
                       font=ctk.CTkFont(size=12),
                       command=self.on_cerrar).pack(
             side='right', padx=8, pady=8)
@@ -145,18 +150,22 @@ class PanelInfo(ctk.CTkFrame):
             self.info_labels[key] = val
 
         # Separador
-        ctk.CTkFrame(self, height=2, fg_color="#333355").pack(
+        ctk.CTkFrame(self, height=2,
+                     fg_color="#333355").pack(
             fill='x', padx=10, pady=(8, 4))
 
         ctk.CTkLabel(self, text="  Historial reciente",
                      font=ctk.CTkFont(size=12, weight="bold"),
-                     text_color="white").pack(anchor='w', padx=10, pady=(4, 2))
+                     text_color="white").pack(
+            anchor='w', padx=10, pady=(4, 2))
 
         self.mini_log = ctk.CTkTextbox(
-            self, fg_color="#0d0d1a",
+            self,
+            fg_color="#0d0d1a",
             text_color="#00ff88",
             font=ctk.CTkFont(family="Courier New", size=9),
-            corner_radius=6, height=130
+            corner_radius=6,
+            height=130
         )
         self.mini_log.pack(fill='x', padx=10, pady=4)
         self.mini_log.configure(state='disabled')
@@ -164,9 +173,10 @@ class PanelInfo(ctk.CTkFrame):
         ctk.CTkButton(self,
                       text="  Ver historial completo",
                       font=ctk.CTkFont(size=11, weight="bold"),
-                      fg_color="#0f3460", hover_color="#1a4a80",
+                      fg_color="#0f3460",
+                      hover_color="#1a4a80",
                       height=32, corner_radius=6,
-                      command=lambda: abrir_log(self._root, nombre)
+                      command=lambda: abrir_log(self.app_parent, nombre)
                       ).pack(fill='x', padx=10, pady=(2, 8))
 
     def actualizar(self):
@@ -182,12 +192,16 @@ class PanelInfo(ctk.CTkFrame):
         self.info_labels["estado"].configure(
             text="QUIETO" if tag["quieto"] else "MOVIENDO",
             text_color="#ff6b6b" if tag["quieto"] else "#6bff6b")
-        self.info_labels["x"].configure(text=f"{tag['x']:.3f} m")
-        self.info_labels["y"].configure(text=f"{tag['y']:.3f} m")
-        self.info_labels["z"].configure(text=f"{tag['z']:.3f} m")
+        self.info_labels["x"].configure(
+            text=f"{tag['x']:.3f} m")
+        self.info_labels["y"].configure(
+            text=f"{tag['y']:.3f} m")
+        self.info_labels["z"].configure(
+            text=f"{tag['z']:.3f} m")
         self.info_labels["velocidad"].configure(
             text=f"{tag['velocidad']:.2f} m/s")
-        self.info_labels["quieto"].configure(text=f"{seg} seg")
+        self.info_labels["quieto"].configure(
+            text=f"{seg} seg")
         self.info_labels["conexion"].configure(
             text="CONECTADO" if tag["conectado"] else "SIN CONEXION",
             text_color="#6bff6b" if tag["conectado"] else "#ff6b6b")
